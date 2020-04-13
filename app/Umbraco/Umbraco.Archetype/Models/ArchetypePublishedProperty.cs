@@ -1,8 +1,10 @@
 ﻿using System;
 using Archetype.Extensions;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Core.PropertyEditors;
 
 namespace Archetype.Models
 {
@@ -32,14 +34,14 @@ namespace Archetype.Models
 
 				if (_propertyType != null)
 				{
-					_sourceValue = new Lazy<object>(() => _propertyType.ConvertDataToSource(_rawValue, preview));
-					_objectValue = new Lazy<object>(() => _propertyType.ConvertSourceToObject(_sourceValue.Value, preview));
-					_xpathValue = new Lazy<object>(() => _propertyType.ConvertSourceToXPath(_sourceValue.Value, preview));
+					_sourceValue = new Lazy<object>(() => _propertyType.ConvertSourceToInter(null,_rawValue, preview));
+					_objectValue = new Lazy<object>(() => _propertyType.ConvertInterToObject(null,PropertyCacheLevel.None,_sourceValue.Value, preview));
+					_xpathValue = new Lazy<object>(() => _propertyType.ConvertInterToXPath(null, PropertyCacheLevel.None,_sourceValue.Value, preview));
 				}
 	        }
 	        catch(Exception ex)
 	        {
-		        LogHelper.Warn<ArchetypePublishedProperty>(string.Format("Could not create an IPublishedProperty for property: {0} - the error was: {1}", property.Alias, ex.Message));
+		        Current.Logger.Warn<ArchetypePublishedProperty>(string.Format("Could not create an IPublishedProperty for property: {0} - the error was: {1}", property.Alias, ex.Message));
 	        }
         }
 
@@ -89,6 +91,30 @@ namespace Archetype.Models
                     ? _xpathValue.Value
                     : _rawValue;
             }
+        }
+
+        public IPublishedPropertyType PropertyType => _propertyType;
+
+        public string Alias => _property.Alias;
+
+        bool IPublishedProperty.HasValue(string culture, string segment)
+        {
+            return HasValue;
+        }
+
+        public object GetSourceValue(string culture = null, string segment = null)
+        {
+            return DataValue;
+        }
+
+        public object GetValue(string culture = null, string segment = null)
+        {
+            return Value;
+        }
+
+        public object GetXPathValue(string culture = null, string segment = null)
+        {
+            return XPathValue;
         }
     }
 }

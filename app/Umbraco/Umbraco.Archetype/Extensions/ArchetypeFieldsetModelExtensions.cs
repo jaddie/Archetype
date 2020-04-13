@@ -1,17 +1,17 @@
 ﻿using System.Linq;
 using Archetype.Models;
-using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 
 namespace Archetype.Extensions
 {
     public static class ArchetypeFieldsetModelExtensions
     {
-        public static IPublishedContent ToPublishedContent(this ArchetypeFieldsetModel fieldset)
+        public static IPublishedElement ToPublishedContent(this ArchetypeFieldsetModel fieldset)
         {
             return new ArchetypePublishedContent(fieldset);
         }
 
-        public static IPublishedContent ToPublishedContent(this ArchetypeFieldsetModel fieldset, ArchetypeModel archetype)
+        public static IPublishedElement ToPublishedContent(this ArchetypeFieldsetModel fieldset, ArchetypeModel archetype)
         {
             var contentSet = archetype.ToPublishedContentSet();
 

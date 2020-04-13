@@ -4,15 +4,12 @@ using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Web;
 
 namespace Archetype.Models
 {
-    public class ArchetypePublishedContent : IPublishedContent
+    public class ArchetypePublishedContent : IPublishedElement
     {
-        private ArchetypeFieldsetModel _fieldset;
-
-        private IEnumerable<IPublishedContent> _parent;
-
         private readonly Dictionary<string, IPublishedProperty> _properties;
 
         public ArchetypePublishedContent(ArchetypeFieldsetModel fieldset, ArchetypePublishedContentSet parent = null)
@@ -20,8 +17,8 @@ namespace Archetype.Models
             if (fieldset == null)
                 throw new ArgumentNullException("fieldset");
 
-            _fieldset = fieldset;
-            _parent = parent ?? Enumerable.Empty<IPublishedContent>();
+            ArchetypeFieldset = fieldset;
+            ContentSet = parent ?? Enumerable.Empty<IPublishedElement>();
 
             _properties = fieldset.Properties
                 .ToDictionary(
@@ -30,55 +27,25 @@ namespace Archetype.Models
                     StringComparer.InvariantCultureIgnoreCase);
         }
 
-        internal ArchetypeFieldsetModel ArchetypeFieldset
-        {
-            get { return _fieldset; }
-        }
+        internal ArchetypeFieldsetModel ArchetypeFieldset { get; }
 
-        public IEnumerable<IPublishedContent> Children
-        {
-            get { return Enumerable.Empty<IPublishedContent>(); }
-        }
+        public IEnumerable<IPublishedElement> Children => Enumerable.Empty<IPublishedElement>();
 
-        public IEnumerable<IPublishedContent> ContentSet
-        {
-            get { return _parent; }
-        }
+        public IEnumerable<IPublishedElement> ContentSet { get; }
 
-        public PublishedContentType ContentType
-        {
-            get { return default(PublishedContentType); }
-        }
+        public IPublishedContentType ContentType => default(PublishedContentType);
 
-        public DateTime CreateDate
-        {
-            get { return DateTime.MinValue; }
-        }
+        public DateTime CreateDate => DateTime.MinValue;
 
-        public int CreatorId
-        {
-            get { return default(int); }
-        }
+        public int CreatorId => default;
 
-        public string CreatorName
-        {
-            get { return default(string); }
-        }
+        public string CreatorName => default;
 
-        public string DocumentTypeAlias
-        {
-            get { return _fieldset.Alias; }
-        }
+        public string DocumentTypeAlias => ArchetypeFieldset.Alias;
 
-        public int DocumentTypeId
-        {
-            get { return default(int); }
-        }
+        public int DocumentTypeId => default;
 
-        public int GetIndex()
-        {
-            return _parent.IndexOf(this);
-        }
+        public int GetIndex() => ContentSet.IndexOf(this);
 
         public IPublishedProperty GetProperty(string alias, bool recurse)
         {
@@ -86,100 +53,49 @@ namespace Archetype.Models
             return _properties.TryGetValue(alias, out property) ? property : null;
         }
 
-        public IPublishedProperty GetProperty(string alias)
-        {
-            return this.GetProperty(alias, false);
-        }
+        public IPublishedProperty GetProperty(string alias) => GetProperty(alias, false);
 
-        public int Id
-        {
-            get { return default(int); }
-        }
+        public int Id => default;
 
-        public bool IsDraft
-        {
-            get { return _fieldset.IsAvailable() == false; }
-        }
+        public bool IsDraft => ArchetypeFieldset.IsAvailable() == false;
 
-        public PublishedItemType ItemType
-        {
-            get { return PublishedItemType.Content; }
-        }
+        public PublishedItemType ItemType => PublishedItemType.Content;
 
-        public int Level
-        {
-            get { return default(int); }
-        }
+        public int Level => default;
 
-        public string Name
-        {
-            get { return default(string); }
-        }
+        public string Name => default;
 
-        public IPublishedContent Parent
-        {
-            get { return default(IPublishedContent); }
-        }
+        public IPublishedElement Parent => default;
 
-        public string Path
-        {
-            get { return default(string); }
-        }
+        public string Path => default;
 
-        public ICollection<IPublishedProperty> Properties
-        {
-            get { return _properties.Values; }
-        }
+        public IEnumerable<IPublishedProperty> Properties => _properties.Values;
 
-        public int SortOrder
-        {
-            get { return default(int); }
-        }
+        public int SortOrder => default;
 
-        public int TemplateId
-        {
-            get { return default(int); }
-        }
+        public int TemplateId => default;
 
-        public DateTime UpdateDate
-        {
-            get { return default(DateTime); }
-        }
+        public DateTime UpdateDate => default;
 
-        public string Url
-        {
-            get { return default(string); }
-        }
+        public string Url => default;
 
-        public string UrlName
-        {
-            get { return default(string); }
-        }
+        public string UrlName => default;
 
-        public Guid Version
-        {
-            get { return Guid.Empty; }
-        }
+        public Guid Version => Guid.Empty;
 
-        public int WriterId
-        {
-            get { return default(int); }
-        }
+        public int WriterId => default;
 
-        public string WriterName
-        {
-            get { return default(string); }
-        }
+        public string WriterName => default;
+
+        public Guid Key => Guid.Empty;
 
         public object this[string alias]
         {
             get
             {
-                var property = this.GetProperty(alias);
+                var property = GetProperty(alias);
 
-                return property == null
-                    ? null
-                    : property.Value;
+                return property?.Value();
             }
         }
     }

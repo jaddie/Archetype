@@ -1,5 +1,7 @@
 using Archetype.Models;
+using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Core.PropertyEditors;
@@ -30,10 +32,12 @@ namespace Archetype.Extensions
         {
             // We need to check if `PropertyValueConvertersResolver` exists,
             // otherwise `PublishedPropertyType` will throw an exception outside of the Umbraco context.; e.g. unit-tests.
-            if (!PropertyValueConvertersResolver.HasCurrent)
+            if (Current.PropertyEditors.Count < 1)
                 return null;
 
-            return new PublishedPropertyType(prop.HostContentType, new PropertyType(new DataTypeDefinition(-1, prop.PropertyEditorAlias) { Id = prop.DataTypeId }));
+            var dataType = Current.Services.DataTypeService.GetByEditorAlias(prop.PropertyEditorAlias).FirstOrDefault();
+            //TODO: How can this be done
+            return new PublishedPropertyType(prop.HostContentType, new PropertyType(new DataType (dataType.Editor) { Id = prop.DataTypeId }),null,null,null);
         }
     }
 }

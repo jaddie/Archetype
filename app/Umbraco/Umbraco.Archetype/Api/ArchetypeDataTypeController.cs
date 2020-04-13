@@ -5,11 +5,13 @@ using System.Net;
 using System.Web.Http;
 using AutoMapper;
 using Umbraco.Core.Models;
-using Umbraco.Web.Models.ContentEditing;
-using Umbraco.Web.Mvc;
-using Umbraco.Web.Editors;
 using Archetype.Extensions;
 using Archetype.Models;
+using Umbraco.Web.Mvc;
+using Umbraco.Web.Editors;
+using Umbraco.Web.Models.ContentEditing;
+using Umbraco.Core;
+using Umbraco.Web.Composing;
 
 namespace Archetype.Api
 {
@@ -25,9 +27,7 @@ namespace Archetype.Api
 
         public IEnumerable<object> GetAllPropertyEditors()
         {
-            return
-                global::Umbraco.Core.PropertyEditors.PropertyEditorResolver.Current.PropertyEditors
-                    .Select(x => new { defaultPreValues = x.DefaultPreValuesForArchetype(), alias = x.Alias, view = x.ValueEditor.View });
+            return Current.PropertyEditors.Select(x => new { defaultPreValues = x.DefaultPreValuesForArchetype(), alias = x.Alias, view = x.GetValueEditor().View });
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Archetype.Api
         /// <returns>System.Object.</returns>
         public object GetAll()
         {
-            var dataTypes = Services.DataTypeService.GetAllDataTypeDefinitions();
+            var dataTypes = Services.DataTypeService.GetAll();
             return dataTypes.Select(t => new { guid = t.Key, name = t.Name });
         }
 
@@ -46,13 +46,13 @@ namespace Archetype.Api
         /// <returns>System.Object.</returns>
         public object GetAllDetails()
         {
-            var dataTypes = Services.DataTypeService.GetAllDataTypeDefinitions();
+            var dataTypes = Services.DataTypeService.GetAll();
 
             var list = new List<object>();
 
             foreach (var dataType in dataTypes)
             {
-                var dataTypeDisplay = Mapper.Map<IDataTypeDefinition, DataTypeDisplay>(dataType);
+                var dataTypeDisplay = Mapper.Map<IDataType, DataTypeDisplay>(dataType);
 
                 list.Add(new { selectedEditor = dataTypeDisplay.SelectedEditor, preValues = dataTypeDisplay.PreValues, dataTypeGuid = dataType.Key });
             }
@@ -68,13 +68,13 @@ namespace Archetype.Api
         /// <exception cref="System.Web.Http.HttpResponseException"></exception>
         public object GetByGuid(Guid guid)
         {
-            var dataType = Services.DataTypeService.GetDataTypeDefinitionById(guid);
+            var dataType = Services.DataTypeService.GetDataType(guid);
             if (dataType == null)
             {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
 
-            var dataTypeDisplay = Mapper.Map<IDataTypeDefinition, DataTypeDisplay>(dataType);
+            var dataTypeDisplay = Mapper.Map<IDataType, DataTypeDisplay>(dataType);
             return new { selectedEditor = dataTypeDisplay.SelectedEditor, preValues = dataTypeDisplay.PreValues };
         }
 
@@ -90,14 +90,14 @@ namespace Archetype.Api
         /// <exception cref="System.Web.Http.HttpResponseException"></exception>
         public object GetByGuid(Guid guid, string contentTypeAlias, string propertyTypeAlias, string archetypeAlias, int nodeId)
         {
-            var dataType = Services.DataTypeService.GetDataTypeDefinitionById(guid);
+            var dataType = Services.DataTypeService.GetDataType(guid);
 
             if (dataType == null)
             {
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
 
-            var dataTypeDisplay = Mapper.Map<IDataTypeDefinition, DataTypeDisplay>(dataType);
+            var dataTypeDisplay = Mapper.Map<IDataType, DataTypeDisplay>(dataType);
 
             return new { selectedEditor = dataTypeDisplay.SelectedEditor, preValues = dataTypeDisplay.PreValues, contentTypeAlias = contentTypeAlias, propertyTypeAlias = propertyTypeAlias, archetypeAlias = archetypeAlias, nodeId = nodeId };
         }

@@ -3,6 +3,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Mvc.Html;
 using Archetype.Models;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 
 namespace Archetype.Extensions
@@ -67,7 +68,7 @@ namespace Archetype.Extensions
             }
             else
             {
-                LogHelper.Info<ArchetypeModel>(string.Format("The partial for {0} could not be found.  Please create a partial with that name or rename your alias.", context.Server.MapPath(partial)));
+                Current.Logger.Info<ArchetypeModel>(string.Format("The partial for {0} could not be found.  Please create a partial with that name or rename your alias.", context.Server.MapPath(partial)));
             }
 
             return new HtmlString(sb.ToString());

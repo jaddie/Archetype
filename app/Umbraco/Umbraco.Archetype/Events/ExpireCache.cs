@@ -1,34 +1,36 @@
 ﻿using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
+using Umbraco.Core.Services.Implement;
 
 namespace Archetype.Events
 {
-    public class ExpireCache : ApplicationEventHandler
+    public class ExpireCacheComposer : ComponentComposer<ExpireCacheComponent>
+    { }
+    public class ExpireCacheComponent : IComponent
     {
-        /// <summary>
-        /// Registers our ExpirePreValueCache handler on app starting.
-        /// </summary>
-        /// <param name="umbracoApplication"></param>
-        /// <param name="applicationContext"></param>
-        protected override void ApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        public void Initialize()
         {
-            base.ApplicationStarting(umbracoApplication, applicationContext);
-            
             DataTypeService.Saved += ExpirePreValueCache;
         }
+
+        public void Terminate()
+        {
+        }
+
 
         /// <summary>
         /// Expires the pre value cache when a datatype is saved.
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="Umbraco.Core.Events.SaveEventArgs{IDataTypeDefinition}"/> instance containing the event data.</param>
-        void ExpirePreValueCache(IDataTypeService sender, global::Umbraco.Core.Events.SaveEventArgs<IDataTypeDefinition> e)
+        void ExpirePreValueCache(IDataTypeService sender, Umbraco.Core.Events.SaveEventArgs<IDataType> e)
         {
             foreach (var dataType in e.SavedEntities)
             {
-                ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(Constants.CacheKey_PreValueFromDataTypeId + dataType.Id);
-                ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(Constants.CacheKey_DataTypeByGuid + dataType.Key);
+                Current.AppCaches.RuntimeCache.ClearByKey(Constants.CacheKey_PreValueFromDataTypeId + dataType.Id);
+                Current.AppCaches.RuntimeCache.ClearByKey(Constants.CacheKey_DataTypeByGuid + dataType.Key);
             }
         }
     }

@@ -2,6 +2,8 @@ using System;
 using Archetype.Extensions;
 using Archetype.Models;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.Services;
@@ -11,8 +13,6 @@ namespace Archetype.PropertyConverters
     /// <summary>
     /// Default property value converter that models the JSON to a C# object.
     /// </summary>
-    [PropertyValueType(typeof(Models.ArchetypeModel))]
-    [PropertyValueCache(PropertyCacheValue.All, PropertyCacheLevel.Content)]
     public class ArchetypeValueConverter : PropertyValueConverterBase
     {
         /// <summary>
@@ -23,7 +23,7 @@ namespace Archetype.PropertyConverters
         /// </value>
         public ServiceContext Services
         {
-            get { return ApplicationContext.Current.Services; }
+            get { return Current.Services; }
         }
 
         /// <summary>
@@ -31,14 +31,14 @@ namespace Archetype.PropertyConverters
         /// </summary>
         /// <param name="propertyType">Type of the property.</param>
         /// <returns></returns>
-        public override bool IsConverter(PublishedPropertyType propertyType)
+        public override bool IsConverter(IPublishedPropertyType propertyType)
         {
-            var isArcheTypePropertyEditor = !String.IsNullOrEmpty(propertyType.PropertyEditorAlias) 
-                && propertyType.PropertyEditorAlias.Equals(Constants.PropertyEditorAlias);
+            var isArcheTypePropertyEditor = !string.IsNullOrEmpty(propertyType.EditorAlias) 
+                && propertyType.EditorAlias.Equals(Constants.PropertyEditorAlias);
             if (!isArcheTypePropertyEditor)
                 return false;
 
-            return !ArchetypeHelper.Instance.IsPropertyValueConverterOverridden(propertyType.DataTypeId);
+            return !ArchetypeHelper.Instance.IsPropertyValueConverterOverridden(propertyType.DataType.Id);
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Archetype.PropertyConverters
         /// <param name="source">The source.</param>
         /// <param name="preview">if set to <c>true</c> [preview].</param>
         /// <returns></returns>
-        public override object ConvertDataToSource(PublishedPropertyType propertyType, object source, bool preview)
+        public override object ConvertSourceToIntermediate(IPublishedElement owner, IPublishedPropertyType propertyType, object source, bool preview)
         {
             var defaultValue = new ArchetypeModel();
 
@@ -60,10 +60,10 @@ namespace Archetype.PropertyConverters
             if (!sourceString.DetectIsJson())
                 return defaultValue;
 
-			using (var timer = DisposableTimer.DebugDuration<ArchetypeValueConverter>(string.Format("ConvertDataToSource ({0})", propertyType != null ? propertyType.PropertyTypeAlias : "null")))
+			using (var timer = Current.ProfilingLogger.DebugDuration<ArchetypeValueConverter>(string.Format("ConvertDataToSource ({0})", propertyType != null ? propertyType.EditorAlias : "null")))
             {
                 var archetype = ArchetypeHelper.Instance.DeserializeJsonToArchetype(sourceString,
-                    (propertyType != null ? propertyType.DataTypeId : -1),
+                    (propertyType != null ? propertyType.DataType.Id : -1),
                     (propertyType != null ? propertyType.ContentType : null));
 
                 return archetype;

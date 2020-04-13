@@ -4,6 +4,7 @@ using System.Globalization;
 using Archetype.Extensions;
 using Archetype.Models;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 
 namespace Archetype.TypeConverters
 {
@@ -11,7 +12,7 @@ namespace Archetype.TypeConverters
     {
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
-            if (destinationType == typeof(IPublishedContent) ||
+            if (destinationType == typeof(IPublishedElement) ||
                 destinationType == typeof(ArchetypePublishedContent))
             {
                 return true;
@@ -28,7 +29,7 @@ namespace Archetype.TypeConverters
 
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (value is ArchetypeFieldsetModel && (destinationType == typeof(IPublishedContent) || destinationType == typeof(ArchetypePublishedContent)))
+            if (value is ArchetypeFieldsetModel && (destinationType == typeof(IPublishedElement) || destinationType == typeof(ArchetypePublishedContent)))
             {
                 return ((ArchetypeFieldsetModel)value).ToPublishedContent();
             }

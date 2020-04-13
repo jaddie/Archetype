@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
+using Umbraco.Core.Composing;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 
@@ -91,7 +92,7 @@ namespace Archetype.Models
             }
             catch (Exception ex)
             {
-                LogHelper.Error<ArchetypeGlobalSettings>(ex.Message, ex);
+                Current.Logger.Error<ArchetypeGlobalSettings>(ex.Message, ex);
 
                 _createNewConfigFile("Exception!");
             }
@@ -100,7 +101,7 @@ namespace Archetype.Models
         private static void _createNewConfigFile(string reason)
         {
             //write a new file with defaults
-            LogHelper.Info<ArchetypeGlobalSettings>(string.Format("Generating a new config file reason: {0}", reason));
+            Current.Logger.Info<ArchetypeGlobalSettings>(string.Format("Generating a new config file reason: {0}", reason));
 
             _instance.Id = Guid.NewGuid();
             _instance.CheckForUpdates = true;

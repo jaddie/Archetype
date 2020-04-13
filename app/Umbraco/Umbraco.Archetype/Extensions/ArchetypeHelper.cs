@@ -12,6 +12,8 @@ using Umbraco.Core.Models.PublishedContent;
 using System.Reflection;
 using System.Diagnostics;
 using System.Net;
+using Umbraco.Core.Composing;
+using Umbraco.Core.PropertyEditors;
 
 /// <summary>
 /// The Extensions namespace.
@@ -27,10 +29,6 @@ namespace Archetype.Extensions
         /// The json settings
         /// </summary>
         protected JsonSerializerSettings _jsonSettings;
-        /// <summary>
-        /// The application
-        /// </summary>
-        protected ApplicationContext _app;
         /// <summary>
         /// The pad lock
         /// </summary>
@@ -71,7 +69,6 @@ namespace Archetype.Extensions
             dcr.DefaultMembersSearchFlags |= BindingFlags.NonPublic;
 
             _jsonSettings = new JsonSerializerSettings { ContractResolver = dcr };
-            _app = ApplicationContext.Current;
         }
 
         /// <summary>
@@ -86,7 +83,7 @@ namespace Archetype.Extensions
         /// <param name="sourceJson">The source JSON.</param>
         /// <param name="dataTypePreValues">The data type pre values.</param>
         /// <returns>ArchetypeModel.</returns>
-        internal ArchetypeModel DeserializeJsonToArchetype(string sourceJson, PreValueCollection dataTypePreValues)
+        internal ArchetypeModel DeserializeJsonToArchetype(string sourceJson, System.Collections.Generic.Dictionary<string, object> dataTypePreValues)
         {
             try
             {
@@ -100,7 +97,7 @@ namespace Archetype.Extensions
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.Error<ArchetypeHelper>("DeserializeJsonToArchetype", ex);
+                    Current.Logger.Error<ArchetypeHelper>("DeserializeJsonToArchetype {ex}", ex);
                 }
 
                 return archetype;
@@ -118,7 +115,7 @@ namespace Archetype.Extensions
         /// <param name="dataTypeId">The data type identifier.</param>
         /// <param name="hostContentType">Type of the host content.</param>
         /// <returns>ArchetypeModel.</returns>
-        internal ArchetypeModel DeserializeJsonToArchetype(string sourceJson, int dataTypeId, PublishedContentType hostContentType = null)
+        internal ArchetypeModel DeserializeJsonToArchetype(string sourceJson, int dataTypeId, IPublishedContentType hostContentType = null)
         {
             try
             {
@@ -132,7 +129,7 @@ namespace Archetype.Extensions
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.Error<ArchetypeHelper>(string.Format("DeserializeJsonToArchetype Error DatatypeId=>{0} SourceJson=>{1}", dataTypeId, sourceJson), ex);
+                    Current.Logger.Error<ArchetypeHelper>(string.Format("DeserializeJsonToArchetype Error DatatypeId=>{0} SourceJson=>{1}", dataTypeId, sourceJson), ex);
                 }
 
                 return archetype;
@@ -214,15 +211,16 @@ namespace Archetype.Extensions
         /// <returns>ArchetypePreValue.</returns>
         private ArchetypePreValue GetArchetypePreValueFromDataTypeId(int dataTypeId)
         {
-            return _app.ApplicationCache.RuntimeCache.GetCacheItem(
+            return Current.AppCaches.RuntimeCache.Get(
                 Constants.CacheKey_PreValueFromDataTypeId + dataTypeId,
                 () =>
                 {
-                    var preValues = _app.Services.DataTypeService.GetPreValuesCollectionByDataTypeId(dataTypeId);
+                    var preValues = Current.Services.DataTypeService.GetAll(dataTypeId).FirstOrDefault();
 
-                    var configJson = preValues.IsDictionaryBased
-                        ? preValues.PreValuesAsDictionary[Constants.PreValueAlias].Value
-                        : preValues.PreValuesAsArray.First().Value;
+                    var configJson = (preValues.Configuration as System.Collections.Generic.Dictionary<string, object>)?.FirstOrDefault().Value?.ToString();
+                    //.IsDictionaryBased
+                    //    ? preValues.PreValuesAsDictionary[Constants.PreValueAlias].Value
+                    //    : preValues.PreValuesAsArray.First().Value;
 
                     var config = JsonConvert.DeserializeObject<ArchetypePreValue>(configJson, _jsonSettings);
                     RetrieveAdditionalProperties(ref config);
@@ -237,9 +235,9 @@ namespace Archetype.Extensions
         /// </summary>
         /// <param name="dataTypePreValues">The data type pre values.</param>
         /// <returns>ArchetypePreValue.</returns>
-        private ArchetypePreValue GetArchetypePreValueFromPreValuesCollection(PreValueCollection dataTypePreValues)
+        private ArchetypePreValue GetArchetypePreValueFromPreValuesCollection(System.Collections.Generic.Dictionary<string, object> dataTypePreValues)
         {
-            var preValueAsString = dataTypePreValues.PreValuesAsDictionary.First().Value.Value;
+            var preValueAsString = dataTypePreValues.First().Value?.ToString();
             var preValue = JsonConvert.DeserializeObject<ArchetypePreValue>(preValueAsString, _jsonSettings);
             return preValue;
         }
@@ -249,11 +247,11 @@ namespace Archetype.Extensions
         /// </summary>
         /// <param name="guid">The unique identifier.</param>
         /// <returns>IDataTypeDefinition.</returns>
-        internal IDataTypeDefinition GetDataTypeByGuid(Guid guid)
+        internal IDataType GetDataTypeByGuid(Guid guid)
         {
-            return (IDataTypeDefinition)ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(
+            return (IDataType)Current.AppCaches.RuntimeCache.Get(
                 Constants.CacheKey_DataTypeByGuid + guid,
-                () => _app.Services.DataTypeService.GetDataTypeDefinitionById(guid));
+                () => Current.Services.DataTypeService.GetDataType(guid));
         }
 
         /// <summary>
@@ -262,7 +260,7 @@ namespace Archetype.Extensions
         /// <param name="archetype">The Archetype to add the additional metadata to</param>
         /// <param name="preValue">The configuration of the Archetype</param>
         /// <param name="hostContentType">Type of the host content.</param>
-        private void RetrieveAdditionalProperties(ref ArchetypeModel archetype, ArchetypePreValue preValue, PublishedContentType hostContentType = null)
+        private void RetrieveAdditionalProperties(ref ArchetypeModel archetype, ArchetypePreValue preValue, IPublishedContentType hostContentType = null)
         {
             foreach (var fieldset in preValue.Fieldsets)
             {
@@ -294,7 +292,7 @@ namespace Archetype.Extensions
             {
                 foreach (var property in fieldset.Properties)
                 {
-                    property.PropertyEditorAlias = GetDataTypeByGuid(property.DataTypeGuid).PropertyEditorAlias;
+                    property.PropertyEditorAlias = GetDataTypeByGuid(property.DataTypeGuid).EditorAlias;
                 }
             }
         }

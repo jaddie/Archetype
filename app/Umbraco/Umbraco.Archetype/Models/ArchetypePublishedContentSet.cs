@@ -11,10 +11,7 @@ namespace Archetype.Models
 
         public ArchetypePublishedContentSet(ArchetypeModel archetype)
         {
-            if (archetype == null)
-                throw new ArgumentNullException("archetype");
-
-            this.ArchetypeModel = archetype;
+            ArchetypeModel = archetype ?? throw new ArgumentNullException("archetype");
 
             var count = archetype.Fieldsets.Count();
 
@@ -33,7 +30,7 @@ namespace Archetype.Models
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return this.GetEnumerator();
+            return GetEnumerator();
         }
     }
 }

@@ -15,13 +15,13 @@ namespace Archetype.Extensions
 		/// </summary>
 		/// <param name="propertyEditor">The property editor</param>
 		/// <returns>The formatted default prevalues</returns>
-		public static IDictionary<string, object> DefaultPreValuesForArchetype(this PropertyEditor propertyEditor)
+		public static IDictionary<string, object> DefaultPreValuesForArchetype(this IDataEditor propertyEditor)
         {
-			if (propertyEditor.DefaultPreValues == null || propertyEditor.DefaultPreValues.Any() == false)
+			if (propertyEditor.DefaultConfiguration == null || propertyEditor.DefaultConfiguration.Any() == false)
 			{
-				return propertyEditor.DefaultPreValues;
+				return propertyEditor.DefaultConfiguration;
 			}
-			var view = propertyEditor.ValueEditor.View.ToLowerInvariant();
+			var view = propertyEditor.GetValueEditor().View.ToLowerInvariant();
 
 			// This is the extension point for default prevalues formatting, in case we need to handle any other
 			// property editors later on. It should be replaced with a switch statement by then, or maybe some fancy 
@@ -30,7 +30,7 @@ namespace Archetype.Extensions
 			{
 				propertyEditor.FormatImageCropperDefaultPreValuesForArchetype();
 			}
-			return propertyEditor.DefaultPreValues;
+			return propertyEditor.DefaultConfiguration;
         }
 
 		/// <summary>
@@ -41,21 +41,21 @@ namespace Archetype.Extensions
 		/// In order for the image cropper to work clientside, we need to make sure it's default prevalue "focalpoint" is returned
 		/// as a JSON object and not as the string it's defined as on the image cropper property editor.
 		/// </remarks>
-		private static void FormatImageCropperDefaultPreValuesForArchetype(this PropertyEditor propertyEditor)
+		private static void FormatImageCropperDefaultPreValuesForArchetype(this IDataEditor propertyEditor)
 		{
 			const string focalPointKey = "focalPoint";
 
-			if (propertyEditor.DefaultPreValues.ContainsKey(focalPointKey) == false || propertyEditor.DefaultPreValues[focalPointKey] == null)
+			if (propertyEditor.DefaultConfiguration.ContainsKey(focalPointKey) == false || propertyEditor.DefaultConfiguration[focalPointKey] == null)
 			{
 				return;
 			}
-			var focalPoint = propertyEditor.DefaultPreValues[focalPointKey].ToString();
+			var focalPoint = propertyEditor.DefaultConfiguration[focalPointKey].ToString();
 			if (string.IsNullOrEmpty(focalPoint))
 			{
 				return;
 			}
 			// translate the JSON string to a JSON object
-			propertyEditor.DefaultPreValues[focalPointKey] = JsonConvert.DeserializeObject(focalPoint);
+			propertyEditor.DefaultConfiguration[focalPointKey] = JsonConvert.DeserializeObject(focalPoint);
 		}
     }
 }
